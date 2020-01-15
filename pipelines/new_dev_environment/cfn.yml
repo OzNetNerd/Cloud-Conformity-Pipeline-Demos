@@ -1,0 +1,123 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: Cloud Conformity demo environment
+
+Parameters:
+  AdminIp:
+    Type: String
+    Default: 0.0.0.0/0
+    Description: "CIDR address for security group"
+
+  TagKey:
+    Type: String
+    Default: Name
+
+  TagValue:
+    Type: String
+    Default: "Cloud Conformity demo environment"
+
+  AmiId:
+    Type: AWS::EC2::Image::Id
+    Description: Linux2 AMI
+
+  VpcCidr:
+    Type: String
+    Description: VPC CIDR
+    Default: 10.0.0.0/16
+
+  PublicSubnetCidr:
+    Type: String
+    Description: Public subnet
+    Default: 10.0.0.0/24
+
+  Ec2KeyName:
+    Type: AWS::EC2::KeyPair::KeyName
+    Description: >-
+      Name of an existing EC2 KeyPair to enable SSH access to the instances
+
+  InstanceType:
+    Description: EC2 instance type
+    Type: String
+    Default: t2.small
+
+Resources:
+  Vpc:
+    Type: AWS::EC2::VPC
+    Properties:
+      CidrBlock: !Ref VpcCidr
+      EnableDnsHostnames: true
+      EnableDnsSupport: true
+      Tags:
+        - Key: !Ref TagKey
+          Value: !Ref TagValue
+
+  PublicSubnet:
+    Type: AWS::EC2::Subnet
+    Properties:
+      CidrBlock: !Ref PublicSubnetCidr
+      MapPublicIpOnLaunch: true
+      VpcId: !Ref Vpc
+      Tags:
+        - Key: !Ref TagKey
+          Value: !Ref TagValue
+
+  InternetGateway:
+    Type: AWS::EC2::InternetGateway
+    Properties:
+      Tags:
+        - Key: !Ref TagKey
+          Value: !Ref TagValue
+
+  VpcGatewayAttachment:
+    Type: AWS::EC2::VPCGatewayAttachment
+    Properties:
+      VpcId: !Ref Vpc
+      InternetGatewayId: !Ref InternetGateway
+
+  PublicRouteTable:
+    Type: AWS::EC2::RouteTable
+    Properties:
+      VpcId: !Ref Vpc
+
+  InternetRoute:
+    Type: AWS::EC2::Route
+    DependsOn: VpcGatewayAttachment
+    Properties:
+      DestinationCidrBlock: 0.0.0.0/0
+      GatewayId: !Ref InternetGateway
+      RouteTableId: !Ref PublicRouteTable
+
+  PublicSubnetRouteTableAssociation:
+    Type: AWS::EC2::SubnetRouteTableAssociation
+    Properties:
+      RouteTableId: !Ref PublicRouteTable
+      SubnetId: !Ref PublicSubnet
+
+  Ec2Instance:
+    Type: AWS::EC2::Instance
+    Properties:
+      ImageId: !Ref AmiId
+      KeyName: !Ref Ec2KeyName
+      SubnetId: !Ref PublicSubnet
+      InstanceType: t2.medium
+      SecurityGroupIds:
+        - !Ref Ec2InstanceSecurityGroup
+      Tags:
+        - Key: Name
+          Value: GitLab
+
+  Ec2InstanceSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: !Sub "${TagValue}"
+      GroupDescription: !Sub "SG for ${TagValue}"
+      SecurityGroupIngress:
+      - IpProtocol: tcp
+        FromPort: 22
+        ToPort: 22
+      VpcId: !Ref Vpc
+
+Outputs:
+  Ec2InstanceHostname:
+    Value: !GetAtt Ec2Instance.PublicDnsName
+    Export:
+      Name: !Sub "${AWS::StackName}-instance"

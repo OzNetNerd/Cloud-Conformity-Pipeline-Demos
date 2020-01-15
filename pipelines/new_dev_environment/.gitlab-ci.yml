@@ -1,0 +1,35 @@
+image: docker:stable
+
+variables:
+  DOCKER_HOST: tcp://docker:2375/
+  DOCKER_DRIVER: overlay2
+
+  # Workaround - https://gitlab.com/gitlab-org/gitlab-runner/issues/4501
+  DOCKER_TLS_CERTDIR: ""
+
+services:
+  - docker:dind
+
+stages:
+  - aws_validate
+  - cc_validate
+  - deploy
+
+validate cfn:
+  image: python:latest
+  stage: aws_validate
+  script:
+  - pip install awscli
+  - aws cloudformation validate-template --template-body file://cfn.yml
+
+validate cc:
+  image: python:latest
+  stage: cc_validate
+  script:
+  - pip3 install -r https://raw.githubusercontent.com/OzNetNerd/Cloud-Conformity-Pipeline-Scanner/master/code/requirements.txt
+  - wget https://raw.githubusercontent.com/OzNetNerd/Cloud-Conformity-Pipeline-Scanner/master/code/scanner.py
+  - python3 scanner.py
+  artifacts:
+    when: on_failure
+    paths:
+    - findings.json
