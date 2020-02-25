@@ -11,7 +11,7 @@ A [collection](pipelines) of CI/CD pipelines using [Pipeline Scanner](https://gi
     * `CC_REGION`
     * `CC_RISK_LEVEL` (optional)
     * `CFN_TEMPLATE_FILE_LOCATION`
-    * `AWS_DEFAULT_REGION`
+
 4. Copy files from one of the [pipelines](pipelines) directories and commit them in the new repository  
 
 # Contact

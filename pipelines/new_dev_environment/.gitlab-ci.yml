@@ -11,16 +11,7 @@ services:
   - docker:dind
 
 stages:
-  - aws_validate
   - cc_validate
-  - deploy
-
-validate cfn:
-  image: python:latest
-  stage: aws_validate
-  script:
-  - pip install awscli
-  - aws cloudformation validate-template --template-body file://cfn.yml
 
 validate cc:
   image: python:latest
