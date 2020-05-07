@@ -5,11 +5,8 @@ The template creates a new dev environment (VPC, internet gateway, security grou
 
 ## Pipeline
 
-The pipeline consists of the following stages:
+The pipeline uses this [Pipeline Scanner](https://github.com/OzNetNerd/Cloud-Conformity-Pipeline-Scanner) to ensure the CloudFormation template is secure
 
-1. Using `awscli`, ensures the CloudFormation template is valid
-2. Using [Pipeline Scanner](https://github.com/OzNetNerd/Cloud-Conformity-Pipeline-Scanner), ensures the CloudFormation template is secure
-
-If the second stage fails, the insecure findings will be made available through the `findings.json` artifact.
+If scanner finds any issues, the pipeline fails. The insecure configurations will then be made available through the `findings.json` artifact.
 
 If you'd like the pipeline to succeed, set the `CC_RISK_LEVEL` variable to `EXTREME`. 
